@@ -28,6 +28,7 @@ import Items from '@/components/Item';
 import Modal from '@/components/Modal';
 import Input from '@/components/Input';
 import { Button } from '@/components/Button';
+import CustomSelect from '@/components/Select';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -441,21 +442,11 @@ export default function Home() {
         </div>
       </Modal>
       <div className="flex gap-4 mb-6">
-        <select
+        <CustomSelect
+          options={containers.map(container => ({ id: container.id.toString(), title: container.title }))}
           value={selectedContainer}
-          onChange={(e) => setSelectedContainer(e.target.value)}
-          className="px-3 py-2 border rounded-lg max-w-[170px]"
-        >
-          <option value="">
-            {containers.length === 0 ? "No options available" : "Select Container"}
-          </option>
-          {containers.length > 0 &&
-            containers.map((container) => (
-              <option key={container.id} value={container.id}>
-                {container.title}
-              </option>
-            ))}
-        </select>
+          onChange={(value) => setSelectedContainer(value)}
+        />
 
         <input
           type="text"
