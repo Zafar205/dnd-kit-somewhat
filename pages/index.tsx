@@ -524,7 +524,7 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                <Button onClick={onAddContainer} className="rounded-3xl w-[250px] h-[50px] shrink-0">
+                <Button onClick={onAddContainer} className="rounded-3xl w-[250px] h-[50px]">
                   + Add Card
                 </Button>
               )}
