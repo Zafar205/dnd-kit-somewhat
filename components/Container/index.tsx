@@ -47,7 +47,7 @@ export default function Container({
         transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
         transition,
       }}
-      className="w-full h-full bg-gray-200 p-4 rounded-xl"
+      className=" bg-gray-200 p-4 rounded-xl min-w-[350px] min-h-[250px]"
     >
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">

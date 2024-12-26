@@ -1,5 +1,4 @@
 'use client';
-
 import { useCallback, useEffect, useRef } from 'react';
 import FocusTrap from 'focus-trap-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -31,7 +30,8 @@ export default function Modal({
   }, [onKeyDown]);
 
   return (
-    <AnimatePresence>
+    // <AnimatePresence>
+    <>
       {showModal && (
         <>
           <FocusTrap focusTrapOptions={{ initialFocus: false }}>
@@ -68,6 +68,7 @@ export default function Modal({
           />
         </>
       )}
-    </AnimatePresence>
+      </>
+    // </AnimatePresence>
   );
 }

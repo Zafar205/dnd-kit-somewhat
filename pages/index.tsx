@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { GripVertical } from "lucide-react"
 // DnD
 import {
   DndContext,
@@ -44,8 +43,7 @@ type DNDType = {
 export default function Home() {
   const [containers, setContainers] = useState<DNDType[]>([]);
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  const [currentContainerId, setCurrentContainerId] =
-    useState<UniqueIdentifier>();
+  const [currentContainerId, setCurrentContainerId] = useState<UniqueIdentifier>();
   const [containerName, setContainerName] = useState('');
   const [itemName, setItemName] = useState('');
   const [showAddContainerModal, setShowAddContainerModal] = useState(false);
@@ -58,7 +56,7 @@ export default function Home() {
   const [newTask, setNewTask] = useState<string>('');
 
   const handleTaskDelete = (containerId: UniqueIdentifier, taskId: UniqueIdentifier) => {
-    console.log('containerId', containerId);
+    console.log('containerIdDelete', containerId);
     setContainers(containers.map(container =>
       container.id === containerId
         ? { ...container, items: container.items.filter(item => item.id !== taskId) }
@@ -446,15 +444,19 @@ export default function Home() {
         <select
           value={selectedContainer}
           onChange={(e) => setSelectedContainer(e.target.value)}
-          className="px-3 py-2 border rounded-lg"
+          className="px-3 py-2 border rounded-lg max-w-[170px]"
         >
-          <option value="">Select Container</option>
-          {containers.map((container) => (
-            <option key={container.id} value={container.id}>
-              {container.title}
-            </option>
-          ))}
+          <option value="">
+            {containers.length === 0 ? "No options available" : "Select Container"}
+          </option>
+          {containers.length > 0 &&
+            containers.map((container) => (
+              <option key={container.id} value={container.id}>
+                {container.title}
+              </option>
+            ))}
         </select>
+
         <input
           type="text"
           value={newTask}
@@ -469,8 +471,9 @@ export default function Home() {
           Add Task
         </button>
       </div>
+
       <div className="mt-10">
-        <div className="grid grid-cols-3 gap-6">
+        <div className="flex flex-wrap items-start justify-center gap-6 pb-4 ">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCorners}
@@ -478,50 +481,59 @@ export default function Home() {
             onDragMove={handleDragMove}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext items={containers.map((i) => i.id)}>
-              {containers.map((container) => (
-                <Container
-                  id={container.id}
-                  title={container.title}
-                  key={container.id}
-                  onAddItem={() => {
-                    setShowAddItemModal(true);
-                    setCurrentContainerId(container.id);
-                  }}
-                  onDelete={() => handleDeleteContainer(container.id)}
-                  onTitleChange={(newTitle) => handleTitleChange(container.id, newTitle)}
-                >
-                  <SortableContext items={container.items.map((i) => i.id)}>
-                    <div className="flex items-start flex-col gap-y-4">
-                      {container.items.map((i) => (
-                        <Items
-                          key={i.id}
-                          id={i.id}
-                          title={i.title}
-                          onDelete={() => handleTaskDelete(container.id, i.id)}
-                          onTitleChange={(newTitle) => handleTaskEdit(container.id, i.id, newTitle)}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </Container>
-              ))}
-            </SortableContext>
-            <div className='flex justify-center mt-10 '>
+            <div className="flex flex-wrap items-start gap-6">
+              <SortableContext items={containers.map((i) => i.id)}>
+                {containers.map((container) => (
+                  <Container
+                    id={container.id}
+                    title={container.title}
+                    key={container.id}
+                    onAddItem={() => {
+                      setShowAddItemModal(true);
+                      setCurrentContainerId(container.id);
+                    }}
+                    onDelete={() => handleDeleteContainer(container.id)}
+                    onTitleChange={(newTitle) => handleTitleChange(container.id, newTitle)}
+                  >
+                    <SortableContext items={container.items.map((i) => i.id)}>
+                      <div className="flex items-start flex-col gap-y-4">
+                        {container.items.map((i) => (
+                          <Items
+                            key={i.id}
+                            id={i.id}
+                            title={i.title}
+                            onDelete={() => handleTaskDelete(container.id, i.id)}
+                            onTitleChange={(newTitle) => handleTaskEdit(container.id, i.id, newTitle)}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </Container>
+                ))}
+              </SortableContext>
+
               {showTitleInput ? (
-                <div className="bg-gray-200 h-[60px] w-[220px] rounded-3xl p-4">
-                  <input
-                    type="text"
-                    value={containerName}
-                    onChange={(e) => setContainerName(e.target.value)}
-                    onKeyDown={handleTitleKeyPress}
-                    className="w-full px-3 py-2 rounded-xl text-sm"
-                    placeholder="Enter card title..."
-                    autoFocus
-                  />
+                <div className="bg-gray-200 h-[67px] w-[220px] rounded-3xl p-4 shrink-0 ">
+                  <div className="relative flex items-center w-full mb-4">
+                    <input
+                      type="text"
+                      value={containerName}
+                      onChange={(e) => setContainerName(e.target.value)}
+                      onKeyDown={handleTitleKeyPress}
+                      className="w-full px-8 py-2 rounded-xl text-sm"
+                      placeholder="Enter card title..."
+                      autoFocus
+                    />
+                    <button
+                      className="absolute left-2 top-1/2 -translate-y-1/2 text-xl font-semibold"
+                      onClick={onAddContainer}
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <Button onClick={onAddContainer} className='rounded-3xl w-[250px] h-[50px]'>
+                <Button onClick={onAddContainer} className="rounded-3xl w-[250px] h-[50px] shrink-0">
                   + Add Card
                 </Button>
               )}
