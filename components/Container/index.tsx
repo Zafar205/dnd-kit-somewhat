@@ -1,62 +1,91 @@
-import React from 'react';
-import ContainerProps from './container.type';
+import { UniqueIdentifier } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import clsx from 'clsx';
-import { Button } from '../Button';
+import { GripVertical, Trash2 } from "lucide-react";
+import { useState } from 'react';
 
-const Container = ({
-  id,
-  children,
-  title,
-  description,
-  onAddItem,
-}: ContainerProps) => {
-  const {
-    attributes,
-    setNodeRef,
-    listeners,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: id,
-    data: {
-      type: 'container',
-    },
+interface ContainerProps {
+  id: UniqueIdentifier;
+  title: string;
+  children: React.ReactNode;
+  onAddItem?: () => void;
+  onDelete?: () => void;
+  onTitleChange?: (newTitle: string) => void;
+}
+
+export default function Container({ 
+  id, 
+  title, 
+  children, 
+  onAddItem, 
+  onDelete,
+  onTitleChange 
+}: ContainerProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(title);
+
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id,
   });
+
+  const handleTitleSubmit = () => {
+    if (editedTitle.trim() && onTitleChange) {
+      onTitleChange(editedTitle);
+    }
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleTitleSubmit();
+    }
+  };
+
   return (
     <div
-      {...attributes}
       ref={setNodeRef}
       style={{
+        transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
         transition,
-        transform: CSS.Translate.toString(transform),
       }}
-      className={clsx(
-        'w-full h-full p-4 bg-gray-50 rounded-xl flex flex-col gap-y-4',
-        isDragging && 'opacity-50',
-      )}
+      className="w-full h-full bg-gray-200 p-4 rounded-xl"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-y-1">
-          <h1 className="text-gray-800 text-xl">{title}</h1>
-          <p className="text-gray-400 text-sm">{description}</p>
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <button {...attributes} {...listeners}>
+            <GripVertical className="cursor-grab" />
+          </button>
+          {isEditing ? (
+            <input
+              type="text"
+              value={editedTitle}
+              onChange={(e) => setEditedTitle(e.target.value)}
+              onBlur={handleTitleSubmit}
+              onKeyDown={handleKeyDown}
+              className="px-2 py-1 rounded text-xl"
+              autoFocus
+            />
+          ) : (
+            <h1 
+              className="text-gray-800 text-xl font-semibold cursor-pointer"
+              onClick={() => setIsEditing(true)}
+            >
+              {title}
+            </h1>
+          )}
         </div>
-        <button
-          className="border p-2 text-xs rounded-xl shadow-lg hover:shadow-xl"
-          {...listeners}
-        >
-          Drag Handle
-        </button>
+        <div className="flex gap-2">
+          <button onClick={onDelete} className="p-1 hover:bg-gray-300 rounded">
+            <Trash2 size={20} className="text-red-500" />
+          </button>
+        </div>
       </div>
-
       {children}
-      <Button variant="ghost" onClick={onAddItem}>
-        Add Item
-      </Button>
+      <button
+        className="w-full bg-gray-300 hover:bg-gray-400 p-2 rounded-lg mt-4"
+        onClick={onAddItem}
+      >
+        + Add Item
+      </button>
     </div>
   );
-};
-
-export default Container;
+}

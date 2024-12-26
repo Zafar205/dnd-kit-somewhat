@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-
+import { GripVertical } from "lucide-react"
 // DnD
 import {
   DndContext,
@@ -50,8 +50,71 @@ export default function Home() {
   const [itemName, setItemName] = useState('');
   const [showAddContainerModal, setShowAddContainerModal] = useState(false);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [showTitleInput, setShowTitleInput] = useState(false);
+
+
+
+  const [selectedContainer, setSelectedContainer] = useState<string>('');
+  const [newTask, setNewTask] = useState<string>('');
+
+  const handleTaskDelete = (containerId: UniqueIdentifier, taskId: UniqueIdentifier) => {
+    console.log('containerId', containerId);
+    setContainers(containers.map(container =>
+      container.id === containerId
+        ? { ...container, items: container.items.filter(item => item.id !== taskId) }
+        : container
+    ));
+  };
+
+  const handleTaskEdit = (containerId: UniqueIdentifier, taskId: UniqueIdentifier, newTitle: string) => {
+    console.log("containerIdEdit", containerId);
+    setContainers(containers.map(container =>
+      container.id === containerId
+        ? {
+          ...container,
+          items: container.items.map(item =>
+            item.id === taskId ? { ...item, title: newTitle } : item
+          )
+        }
+        : container
+    ));
+  };
+
+  const handleTitleChange = (containerId: UniqueIdentifier, newTitle: string) => {
+    setContainers(containers.map(container =>
+      container.id === containerId
+        ? { ...container, title: newTitle }
+        : container
+    ));
+  };
+  const handleDeleteContainer = (containerId: UniqueIdentifier) => {
+    setContainers(containers.filter(container => container.id !== containerId));
+  };
+
+  const handleAddTask = () => {
+    if (!selectedContainer || !newTask) return;
+
+    const id = `item-${uuidv4()}`;
+    const updatedContainers = containers.map(container => {
+      if (container.id === selectedContainer) {
+        return {
+          ...container,
+          items: [...container.items, { id, title: newTask }]
+        };
+      }
+      return container;
+    });
+
+    setContainers(updatedContainers);
+    setNewTask('');
+    setSelectedContainer('');
+  };
 
   const onAddContainer = () => {
+    if (!showTitleInput) {
+      setShowTitleInput(true);
+      return;
+    }
     if (!containerName) return;
     const id = `container-${uuidv4()}`;
     setContainers([
@@ -64,6 +127,13 @@ export default function Home() {
     ]);
     setContainerName('');
     setShowAddContainerModal(false);
+    setShowTitleInput(false);
+  };
+
+  const handleTitleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      onAddContainer();
+    }
   };
 
   const onAddItem = () => {
@@ -372,11 +442,32 @@ export default function Home() {
           <Button onClick={onAddItem}>Add Item</Button>
         </div>
       </Modal>
-      <div className="flex items-center justify-between gap-y-2">
-        <h1 className="text-gray-800 text-3xl font-bold">Dnd-kit Guide</h1>
-        <Button onClick={() => setShowAddContainerModal(true)}>
-          Add Container
-        </Button>
+      <div className="flex gap-4 mb-6">
+        <select
+          value={selectedContainer}
+          onChange={(e) => setSelectedContainer(e.target.value)}
+          className="px-3 py-2 border rounded-lg"
+        >
+          <option value="">Select Container</option>
+          {containers.map((container) => (
+            <option key={container.id} value={container.id}>
+              {container.title}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          value={newTask}
+          onChange={(e) => setNewTask(e.target.value)}
+          placeholder="Enter task..."
+          className="px-3 py-2 border rounded-lg flex-1"
+        />
+        <button
+          onClick={handleAddTask}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+        >
+          Add Task
+        </button>
       </div>
       <div className="mt-10">
         <div className="grid grid-cols-3 gap-6">
@@ -397,17 +488,45 @@ export default function Home() {
                     setShowAddItemModal(true);
                     setCurrentContainerId(container.id);
                   }}
+                  onDelete={() => handleDeleteContainer(container.id)}
+                  onTitleChange={(newTitle) => handleTitleChange(container.id, newTitle)}
                 >
                   <SortableContext items={container.items.map((i) => i.id)}>
                     <div className="flex items-start flex-col gap-y-4">
                       {container.items.map((i) => (
-                        <Items title={i.title} id={i.id} key={i.id} />
+                        <Items
+                          key={i.id}
+                          id={i.id}
+                          title={i.title}
+                          onDelete={() => handleTaskDelete(container.id, i.id)}
+                          onTitleChange={(newTitle) => handleTaskEdit(container.id, i.id, newTitle)}
+                        />
                       ))}
                     </div>
                   </SortableContext>
                 </Container>
               ))}
             </SortableContext>
+            <div className='flex justify-center mt-10 '>
+              {showTitleInput ? (
+                <div className="bg-gray-200 h-[60px] w-[220px] rounded-3xl p-4">
+                  <input
+                    type="text"
+                    value={containerName}
+                    onChange={(e) => setContainerName(e.target.value)}
+                    onKeyDown={handleTitleKeyPress}
+                    className="w-full px-3 py-2 rounded-xl text-sm"
+                    placeholder="Enter card title..."
+                    autoFocus
+                  />
+                </div>
+              ) : (
+                <Button onClick={onAddContainer} className='rounded-3xl w-[250px] h-[50px]'>
+                  + Add Card
+                </Button>
+              )}
+            </div>
+
             <DragOverlay adjustScale={false}>
               {/* Drag Overlay For item Item */}
               {activeId && activeId.toString().includes('item') && (
