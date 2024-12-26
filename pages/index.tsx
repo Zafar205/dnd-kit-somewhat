@@ -533,13 +533,17 @@ export default function Home() {
             <DragOverlay adjustScale={false}>
               {/* Drag Overlay For item Item */}
               {activeId && activeId.toString().includes('item') && (
+                <div className='m-4 min-w-[300px]'>
                 <Items id={activeId} title={findItemTitle(activeId)} />
+                </div>
               )}
               {/* Drag Overlay For Container */}
               {activeId && activeId.toString().includes('container') && (
                 <Container id={activeId} title={findContainerTitle(activeId)}>
                   {findContainerItems(activeId).map((i) => (
+                    <div className='m-4 min-w-[300px] ml-0 mr-0 mb-0'>
                     <Items key={i.id} title={i.title} id={i.id} />
+                    </div>
                   ))}
                 </Container>
               )}
