@@ -33,6 +33,7 @@ export default function Container({
       onTitleChange(editedTitle);
     }
     setIsEditing(false);
+    setShowTooltip(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -52,7 +53,7 @@ export default function Container({
         transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
         transition,
       }}
-      className="bg-gray-200 p-4 rounded-xl min-w-[350px] min-h-[250px]"
+      className="bg-gray-200 p-4 rounded-xl min-w-[350px] min-h-[150px]"
     >
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2 max-w-[250px]">
