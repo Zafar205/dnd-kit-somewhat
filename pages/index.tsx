@@ -473,7 +473,7 @@ export default function Home() {
       </div>
 
       <div className="mt-10">
-        <div className="flex flex-wrap items-start justify-center gap-6 pb-4 ">
+        <div className="flex flex-wrap items-start gap-6 pb-4 ">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCorners}

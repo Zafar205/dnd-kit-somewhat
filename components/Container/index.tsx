@@ -22,6 +22,7 @@ export default function Container({
 }: ContainerProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id,
@@ -40,6 +41,10 @@ export default function Container({
     }
   };
 
+  const truncateTitle = (text: string) => {
+    return text.length > 20 ? text.substring(0, 20) + '...' : text;
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -47,10 +52,10 @@ export default function Container({
         transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
         transition,
       }}
-      className=" bg-gray-200 p-4 rounded-xl min-w-[350px] min-h-[250px]"
+      className="bg-gray-200 p-4 rounded-xl min-w-[350px] min-h-[250px]"
     >
       <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 max-w-[250px]">
           <button {...attributes} {...listeners}>
             <GripVertical className="cursor-grab" />
           </button>
@@ -61,16 +66,25 @@ export default function Container({
               onChange={(e) => setEditedTitle(e.target.value)}
               onBlur={handleTitleSubmit}
               onKeyDown={handleKeyDown}
-              className="px-2 py-1 rounded text-xl"
+              className="px-2 py-1 rounded text-xl w-full"
               autoFocus
             />
           ) : (
-            <h1 
-              className="text-gray-800 text-xl font-semibold cursor-pointer"
-              onClick={() => setIsEditing(true)}
-            >
-              {title}
-            </h1>
+            <div className="relative">
+              <h1 
+                className="text-gray-800 text-xl font-semibold cursor-pointer"
+                onClick={() => setIsEditing(true)}
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+              >
+                {truncateTitle(title)}
+              </h1>
+              {showTooltip && title.length > 20 && (
+                <div className="absolute z-50 px-2 py-1 text-sm text-white bg-gray-800 rounded-md -top-8 left-0 whitespace-nowrap">
+                  {title}
+                </div>
+              )}
+            </div>
           )}
         </div>
         <div className="flex gap-2">
