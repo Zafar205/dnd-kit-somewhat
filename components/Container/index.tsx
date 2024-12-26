@@ -24,9 +24,13 @@ export default function Container({
   const [editedTitle, setEditedTitle] = useState(title);
   const [showTooltip, setShowTooltip] = useState(false);
 
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, active } = useSortable({
     id,
   });
+
+
+  const isDragging = active?.id === id;
+
 
   const handleTitleSubmit = () => {
     if (editedTitle.trim() && onTitleChange) {
@@ -52,6 +56,7 @@ export default function Container({
       style={{
         transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
         transition,
+        filter: isDragging ? 'blur(0.8px)' : 'none',
       }}
       className="bg-gray-200 p-4 rounded-xl min-w-[350px] min-h-[150px]"
     >
@@ -67,7 +72,7 @@ export default function Container({
               onChange={(e) => setEditedTitle(e.target.value)}
               onBlur={handleTitleSubmit}
               onKeyDown={handleKeyDown}
-              className="px-2 py-1 rounded text-xl w-full"
+              className="rounded text-xl w-full"
               autoFocus
             />
           ) : (
