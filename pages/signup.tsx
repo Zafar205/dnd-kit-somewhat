@@ -33,8 +33,8 @@ const SignUpForm = () => {
 
     try {
       const result = await CreateUserWithEmailAndPassword(formData.email, formData.password);
-      writeUserData(formData.email);
-      writeRoomData(formData.email);
+      createUser(formData.email);
+      createRoom(formData.email);
 
       console.log("result", result);
       localStorage.setItem('user', "loggedIn");
@@ -61,19 +61,19 @@ const SignUpForm = () => {
   };
   
 
-  const writeUserData = async (email: string)=> {
+  const createUser = async (email: string)=> {
     const db = getDatabase();
     await set(ref(db, 'users/' + sanitizeEmail(email)), {
       id: email,
       email: email,
     });
   }
-  const writeRoomData = async (email: string)=> {
+  const createRoom = async (email: string)=> {
     const db = getDatabase();
     await set(ref(db, 'rooms/' + sanitizeEmail(email)), {
       id: email,
       email: email,
-      data : {},
+      data : {"data": "data"},
       admin : true,
       members : [email]
     });

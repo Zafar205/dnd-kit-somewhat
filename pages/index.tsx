@@ -122,15 +122,11 @@ export default function Home() {
   const sanitizeEmail = (email: string) => {
     return email.replace(/[.#$/[\]]/g, '_');
   };
-  const writeRoomData = async (email: string, containers: DNDType[]) => {
-    const userId = email; // Use email as the user ID
-  
+  const writeRoomData = async (email: string, containers: DNDType[]) => {  
     try {
       // Create a new unique ID for the room
-      const roomId = sanitizeEmail(email); 
-  
-      await set(ref(db, `rooms/${roomId}`), {
-        id: roomId, 
+      await set(ref(db, `rooms/${sanitizeEmail(email)}`), {
+        id: email, 
         email: email,
         data: {
           containers: containers 
@@ -219,6 +215,18 @@ export default function Home() {
         items: [],
       },
     ]);
+
+    if(user?.email){
+    writeRoomData(user.email, [
+      ...containers,
+      {
+        id,
+        title: containerName,
+        items: [],
+      },
+    ]);
+    }
+
     setContainerName('');
     setShowAddContainerModal(false);
     setShowTitleInput(false);
