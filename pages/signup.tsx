@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import {useCreateUserWithEmailAndPassword} from "react-firebase-hooks/auth"
 import {auth} from "@/firebase/config"
+import { useRouter } from 'next/navigation';
 
 const SignUpForm = () => {
   const [formData, setFormData] = useState({
@@ -9,6 +10,7 @@ const SignUpForm = () => {
     password: '',
     confirmPassword: '',
   });
+  const router = useRouter();
 
 interface FormData {
     email: string;
@@ -30,6 +32,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     try {
       const result = await CreateUserWithEmailAndPassword(formData.email, formData.password);
       console.log("result", result);
+      router.push('/');
       setFormData({
         email: '',
         password: '',
