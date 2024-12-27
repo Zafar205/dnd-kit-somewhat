@@ -3,7 +3,7 @@ import { use, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db , usersRef } from '@/firebase/config';
-import { ref, query, get, orderByChild, equalTo } from 'firebase/database';
+import { ref, query, get, orderByChild, equalTo, set } from 'firebase/database';
 // DnD
 import {
   DndContext,
@@ -96,29 +96,53 @@ export default function Home() {
 
   const logout = () => {
     localStorage.setItem('user', "");
-    signOut(auth);
-  }
-  const getUserByEmail =async (db: any, email: string): Promise<UserData | null> =>{
-    try {
-      const usersRef = ref(db, 'users');
-      const emailQuery = query(usersRef, orderByChild('email'), equalTo(email));
-      const snapshot = await get(emailQuery);
-  
-      if (snapshot.exists()) {
-        const userData: { [key: string]: UserData } = snapshot.val();
-        // Assuming unique emails, return the first user
-        console.log("User data:", Object.values(userData)[0]);
-        return Object.values(userData)[0]; 
-      } 
-      else {
-        return null; // User not found
+    signOut(auth);}
+
+
+
+    const getUserByEmail = async (email: string): Promise<UserData | null> => {
+      try {
+        console.log("Checking email:", email); // Debug log
+        console.log("Sanitized email:", sanitizeEmail(email));
+        const userRef = ref(db, 'users/' + sanitizeEmail(email));
+        const snapshot = await get(userRef);
+        
+        console.log("Snapshot:", snapshot.val()); // Debug log
+        
+        if (snapshot.exists()) {
+          return snapshot.val();
+        }
+        return null;
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        return null;
       }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      return null;
-    }
-  }
+    };
   
+  const sanitizeEmail = (email: string) => {
+    return email.replace(/[.#$/[\]]/g, '_');
+  };
+  const writeRoomData = async (email: string, containers: DNDType[]) => {
+    const userId = email; // Use email as the user ID
+  
+    try {
+      // Create a new unique ID for the room
+      const roomId = sanitizeEmail(email); 
+  
+      await set(ref(db, `rooms/${roomId}`), {
+        id: roomId, 
+        email: email,
+        data: {
+          containers: containers 
+        },
+        admin: true,
+        members: [email]
+      });
+  
+    } catch (error) {
+      console.error("Error writing room data:", error);
+    }
+  };
 
   const handleTaskDelete = (containerId: UniqueIdentifier, taskId: UniqueIdentifier) => {
     console.log('containerIdDelete', containerId);
@@ -154,7 +178,7 @@ export default function Home() {
     setContainers(containers.filter(container => container.id !== containerId));
   };
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (!selectedContainer || !newTask) return;
 
     const id = `item-${uuidv4()}`;
@@ -173,15 +197,19 @@ export default function Home() {
     setSelectedContainer('');
   };
 
-  const onAddContainer = () => {
-    if (user?.email) {
-      getUserByEmail(db, user.email);
-    }
+  const onAddContainer = async () => {
+
     if (!showTitleInput) {
       setShowTitleInput(true);
       return;
     }
     if (!containerName) return;
+
+    if (user?.email) {
+      const userData = await getUserByEmail(user.email);
+      console.log("Retrieved user data:", userData); // Debug log
+    }
+
     const id = `container-${uuidv4()}`;
     setContainers([
       ...containers,
