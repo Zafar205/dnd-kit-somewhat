@@ -38,9 +38,9 @@ const SignUpForm = () => {
 
       console.log("result", result);
       localStorage.setItem('user', "loggedIn");
-      if (result){
+      // if (result){
       router.push('/');
-      }
+      // }
       setFormData({
         email: '',
         password: '',

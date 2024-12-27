@@ -147,6 +147,13 @@ export default function Home() {
         ? { ...container, items: container.items.filter(item => item.id !== taskId) }
         : container
     ));
+    if(user?.email){
+    writeRoomData(user.email, containers.map(container =>
+      container.id === containerId
+        ? { ...container, items: container.items.filter(item => item.id !== taskId) }
+        : container
+    ));
+    }
   };
 
   const handleTaskEdit = (containerId: UniqueIdentifier, taskId: UniqueIdentifier, newTitle: string) => {
@@ -161,6 +168,18 @@ export default function Home() {
         }
         : container
     ));
+    if(user?.email){
+    writeRoomData(user.email, containers.map(container =>
+      container.id === containerId
+        ? {
+          ...container,
+          items: container.items.map(item =>
+            item.id === taskId ? { ...item, title: newTitle } : item
+          )
+        }
+        : container
+    ));
+    }
   };
 
   const handleTitleChange = (containerId: UniqueIdentifier, newTitle: string) => {
@@ -169,9 +188,19 @@ export default function Home() {
         ? { ...container, title: newTitle }
         : container
     ));
+    if(user?.email){
+    writeRoomData(user.email, containers.map(container =>
+      container.id === containerId
+        ? { ...container, title: newTitle }
+        : container
+    ));
+    }
   };
   const handleDeleteContainer = (containerId: UniqueIdentifier) => {
     setContainers(containers.filter(container => container.id !== containerId));
+    if (user?.email) {
+      writeRoomData(user.email, containers.filter(container => container.id !== containerId));
+    }
   };
 
   const handleAddTask = async () => {
@@ -189,6 +218,9 @@ export default function Home() {
     });
 
     setContainers(updatedContainers);
+    if(user?.email){
+      writeRoomData(user.email,updatedContainers);
+      }
     setNewTask('');
     setSelectedContainer('');
   };
@@ -248,6 +280,9 @@ export default function Home() {
       title: itemName,
     });
     setContainers([...containers]);
+    if(user?.email){
+      writeRoomData(user.email, [...containers]);
+      }
     setItemName('');
     setShowAddItemModal(false);
   };
@@ -335,6 +370,9 @@ export default function Home() {
         );
 
         setContainers(newItems);
+        if(user?.email){
+          writeRoomData(user.email, newItems);
+          }
       } else {
         // In different containers
         let newItems = [...containers];
@@ -348,6 +386,8 @@ export default function Home() {
           removeditem,
         );
         setContainers(newItems);
+        if(user?.email){
+          writeRoomData(user.email, newItems);}
       }
     }
 
@@ -387,6 +427,10 @@ export default function Home() {
       );
       newItems[overContainerIndex].items.push(removeditem);
       setContainers(newItems);
+      if(user?.email){
+        writeRoomData(user.email, newItems);
+        }
+
     }
   };
 
@@ -413,6 +457,12 @@ export default function Home() {
       let newItems = [...containers];
       newItems = arrayMove(newItems, activeContainerIndex, overContainerIndex);
       setContainers(newItems);
+      if(user?.email){
+        writeRoomData(user.email, newItems);
+        }
+
+
+
     }
 
     // Handling item Sorting
@@ -453,6 +503,13 @@ export default function Home() {
           overitemIndex,
         );
         setContainers(newItems);
+        if(user?.email){
+          writeRoomData(user.email, newItems);
+          }
+
+
+
+
       } else {
         // In different containers
         let newItems = [...containers];
@@ -466,6 +523,10 @@ export default function Home() {
           removeditem,
         );
         setContainers(newItems);
+        if(user?.email){
+          writeRoomData(user.email, newItems);}
+
+
       }
     }
     // Handling item dropping into Container
@@ -501,6 +562,11 @@ export default function Home() {
       );
       newItems[overContainerIndex].items.push(removeditem);
       setContainers(newItems);
+      if(user?.email){
+        writeRoomData(user.email, newItems);
+        }
+
+
     }
     setActiveId(null);
   }
