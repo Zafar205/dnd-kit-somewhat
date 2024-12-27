@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getDatabase } from 'firebase/database';
+import { getDatabase, ref } from 'firebase/database';
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -22,4 +22,6 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getDatabase(app);
-export {auth, app, db}
+const usersRef = ref(db, 'users'); //reference to the users collection
+const roomsRef = ref(db, 'rooms'); //reference to the rooms collection
+export {auth, app, db, usersRef, roomsRef}

@@ -17,7 +17,7 @@ const SignInForm = () => {
   const [signInWithEmailAndPassword, user, loading, error] = useSignInWithEmailAndPassword(auth);
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log('Sign in form submitted:', formData);
 
@@ -35,6 +35,7 @@ const SignInForm = () => {
           email: '',
           password: '',
         });
+        localStorage.setItem('user', "loggedIn");
         router.push('/');
       }
     } catch (error: any) {

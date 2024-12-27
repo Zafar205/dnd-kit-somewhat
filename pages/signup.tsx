@@ -34,9 +34,13 @@ const SignUpForm = () => {
     try {
       const result = await CreateUserWithEmailAndPassword(formData.email, formData.password);
       writeUserData(formData.email);
+      writeRoomData(formData.email);
 
       console.log("result", result);
+      localStorage.setItem('user', "loggedIn");
+      if (result){
       router.push('/');
+      }
       setFormData({
         email: '',
         password: '',
@@ -52,17 +56,28 @@ const SignUpForm = () => {
 
   };
 
-
+  const sanitizeEmail = (email: string) => {
+    return email.replace(/[.#$/[\]]/g, '_');
+  };
+  
 
   const writeUserData = async (email: string)=> {
     const db = getDatabase();
-    const userId = userIddb();  // Generate a unique user ID
-    await set(ref(db, 'users/' + userId), {
+    await set(ref(db, 'users/' + sanitizeEmail(email)), {
       id: email,
       email: email,
     });
   }
-
+  const writeRoomData = async (email: string)=> {
+    const db = getDatabase();
+    await set(ref(db, 'rooms/' + sanitizeEmail(email)), {
+      id: email,
+      email: email,
+      data : {},
+      admin : true,
+      members : [email]
+    });
+  }
 
   return (
     <section className="bg-gray-50 dark:bg-gray-900">

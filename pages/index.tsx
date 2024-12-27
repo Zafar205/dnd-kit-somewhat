@@ -61,6 +61,7 @@ export default function Home() {
   const router = useRouter();  
   const [selectedContainer, setSelectedContainer] = useState<string>('');
   const [newTask, setNewTask] = useState<string>('');
+
     // DND Handlers
     const sensors = useSensors(
       useSensor(PointerSensor),
@@ -71,7 +72,7 @@ export default function Home() {
 
 
   useEffect(() => {
-    if (!user) {
+    if (!user && !localStorage.getItem('user')) {
       router.push('/login');
     }
     setIsLoading(false);
@@ -93,6 +94,10 @@ export default function Home() {
     [key: string]: any;
   }
 
+  const logout = () => {
+    localStorage.setItem('user', "");
+    signOut(auth);
+  }
   const getUserByEmail =async (db: any, email: string): Promise<UserData | null> =>{
     try {
       const usersRef = ref(db, 'users');
@@ -499,7 +504,7 @@ export default function Home() {
       </Modal>
       <div className="flex gap-4 mb-6">
 
-        <button className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full' onClick={() => { signOut(auth) }}>Log out</button>
+        <button className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full' onClick={logout}>Log out</button>
 
         <CustomSelect
           options={containers.map(container => ({ id: container.id.toString(), title: container.title }))}
