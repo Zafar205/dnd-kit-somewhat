@@ -1,25 +1,55 @@
 "use client"
 import { useState } from "react";
-
+import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth"
+import { auth } from "@/firebase/config"
+import { useRouter } from "next/navigation";
 
 const SignInForm = () => {
-    const [formData, setFormData] = useState({
-      email: '',
-      password: '',
-      remember: false
-    });
-  
-    interface FormData {
-        email: string;
-        password: string;
-        remember: boolean;
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    remember: false
+  });
+  const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth)
+  const router = useRouter();
+
+  interface FormData {
+    email: string;
+    password: string;
+    remember: boolean;
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // Handle form submission
+    console.log('Sign in form submitted:', formData);
+
+    if (!formData.email || !formData.password) {
+      alert("Please make sure all fields are valid.");
+      return;
     }
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        // Handle form submission
-        console.log('Sign in form submitted:', formData);
-      };
+    try {
+      const result = await signInWithEmailAndPassword(formData.email, formData.password);
+      console.log("result", result);
+      setFormData({
+        email: '',
+        password: '',
+        remember: false
+      })
+      router.push('/')
+
+    } catch (error) {
+      const errorMessage = error as { response?: { data: any }; message: string };
+      if (errorMessage.response) {
+        console.error("Error response:", errorMessage.response.data);
+      } else {
+        console.error("Error", errorMessage.message);
+      }
+    }
+
+
+  };
     
   
     return (

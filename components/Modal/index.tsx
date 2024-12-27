@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef } from 'react';
 import FocusTrap from 'focus-trap-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import {  motion } from 'framer-motion';
 import clsx from 'clsx';
 
 // Types
@@ -30,7 +30,6 @@ export default function Modal({
   }, [onKeyDown]);
 
   return (
-    // <AnimatePresence>
     <>
       {showModal && (
         <>
@@ -69,6 +68,5 @@ export default function Modal({
         </>
       )}
       </>
-    // </AnimatePresence>
   );
 }

@@ -1,25 +1,48 @@
 "use client"
 import React, { useState } from 'react';
+import {useCreateUserWithEmailAndPassword} from "react-firebase-hooks/auth"
+import {auth} from "@/firebase/config"
 
 const SignUpForm = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
-    terms: false
   });
 
 interface FormData {
     email: string;
     password: string;
     confirmPassword: string;
-    terms: boolean;
 }
 
-const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+const [CreateUserWithEmailAndPassword] = useCreateUserWithEmailAndPassword(auth)
+
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Handle form submission
     console.log('Sign up form submitted:', formData);
+    if (!formData.email || !formData.password || formData.password !== formData.confirmPassword) {
+      alert("Please make sure all fields are valid.");
+      return;
+  }
+
+    try {
+      const result = await CreateUserWithEmailAndPassword(formData.email, formData.password);
+      console.log("result", result);
+      setFormData({
+        email: '',
+        password: '',
+        confirmPassword: '',
+      })
+  } catch (error) {
+      if (error instanceof Error) {
+          console.error("Error", error.message);
+      } else {
+          console.error("An unknown error occurred");
+      }
+  }
+  
 };
 
   return (
@@ -87,8 +110,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
                     type="checkbox"
                     className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
                     required
-                    checked={formData.terms}
-                    onChange={(e) => setFormData({...formData, terms: e.target.checked})}
+
                   />
                 </div>
                 <div className="ml-3 text-sm">
