@@ -4,24 +4,21 @@ import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth"
 import { auth } from "@/firebase/config"
 import { useRouter } from "next/navigation";
 
+interface FormData {
+  email: string;
+  password: string;
+}
+
 const SignInForm = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
-    remember: false
   });
-  const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth)
+  const [signInWithEmailAndPassword, user, loading, error] = useSignInWithEmailAndPassword(auth);
   const router = useRouter();
-
-  interface FormData {
-    email: string;
-    password: string;
-    remember: boolean;
-  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Handle form submission
     console.log('Sign in form submitted:', formData);
 
     if (!formData.email || !formData.password) {
@@ -31,25 +28,31 @@ const SignInForm = () => {
 
     try {
       const result = await signInWithEmailAndPassword(formData.email, formData.password);
-      console.log("result", result);
-      setFormData({
-        email: '',
-        password: '',
-        remember: false
-      })
-      router.push('/')
-
-    } catch (error) {
-      const errorMessage = error as { response?: { data: any }; message: string };
-      if (errorMessage.response) {
-        console.error("Error response:", errorMessage.response.data);
+      console.log("Authentication result:", result); // Add this line for debugging
+      
+      if (result) {
+        setFormData({
+          email: '',
+          password: '',
+        });
+        router.push('/');
+      }
+    } catch (error: any) {
+      console.error("Error code:", error?.code);
+      console.error("Error message:", error?.message);
+      
+      // More user-friendly error handling
+      if (error?.code === 'auth/wrong-password') {
+        alert('Incorrect password');
+      } else if (error?.code === 'auth/user-not-found') {
+        alert('No user found with this email');
+      } else if (error?.code === 'auth/invalid-email') {
+        alert('Invalid email format');
       } else {
-        console.error("Error", errorMessage.message);
+        alert('An error occurred during sign in. Please try again.');
       }
     }
-
-
-  };
+};
     
   
     return (
@@ -97,18 +100,9 @@ const SignInForm = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-start">
                     <div className="flex items-center h-5">
-                      <input
-                        id="remember"
-                        aria-describedby="remember"
-                        type="checkbox"
-                        className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
-                        checked={formData.remember}
-                        onChange={(e) => setFormData({...formData, remember: e.target.checked})}
-                      />
+
                     </div>
-                    <div className="ml-3 text-sm">
-                      <label htmlFor="remember" className="text-gray-500 dark:text-gray-300">Remember me</label>
-                    </div>
+
                   </div>
                   <a href="#" className="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">
                     Forgot password?

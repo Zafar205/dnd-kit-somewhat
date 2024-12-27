@@ -1,5 +1,8 @@
-import { useState } from 'react';
+"use client"
+import { use, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '@/firebase/config';
 // DnD
 import {
   DndContext,
@@ -29,6 +32,8 @@ import Modal from '@/components/Modal';
 import Input from '@/components/Input';
 import { Button } from '@/components/Button';
 import CustomSelect from '@/components/Select';
+import { useRouter } from 'next/navigation';
+import { signOut } from 'firebase/auth';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -50,11 +55,36 @@ export default function Home() {
   const [showAddContainerModal, setShowAddContainerModal] = useState(false);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [showTitleInput, setShowTitleInput] = useState(false);
-
-
-
+  const [isLoading, setIsLoading] = useState(true);
+  const [user] = useAuthState(auth);
+  const router = useRouter();  
   const [selectedContainer, setSelectedContainer] = useState<string>('');
   const [newTask, setNewTask] = useState<string>('');
+    // DND Handlers
+    const sensors = useSensors(
+      useSensor(PointerSensor),
+      useSensor(KeyboardSensor, {
+        coordinateGetter: sortableKeyboardCoordinates,
+      }),
+    );
+
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+    }
+    setIsLoading(false);
+  }, [user, router]);
+
+  // Render loading state
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  // Render nothing if not authenticated
+  if (!user) {
+    return null;
+  }
 
   const handleTaskDelete = (containerId: UniqueIdentifier, taskId: UniqueIdentifier) => {
     console.log('containerIdDelete', containerId);
@@ -150,7 +180,7 @@ export default function Home() {
   };
 
   // Find the value of the items
-  function findValueOfItems(id: UniqueIdentifier | undefined, type: string) {
+  const findValueOfItems = (id: UniqueIdentifier | undefined, type: string) => {
     if (type === 'container') {
       return containers.find((item) => item.id === id);
     }
@@ -181,15 +211,9 @@ export default function Home() {
     return container.items;
   };
 
-  // DND Handlers
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
 
-  function handleDragStart(event: DragStartEvent) {
+
+  const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const { id } = active;
     setActiveId(id);
@@ -294,7 +318,7 @@ export default function Home() {
   };
 
   // This is the function that handles the sorting of the containers and items when the user is done dragging.
-  function handleDragEnd(event: DragEndEvent) {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     // Handling Container Sorting
@@ -442,6 +466,9 @@ export default function Home() {
         </div>
       </Modal>
       <div className="flex gap-4 mb-6">
+
+        <button onClick={() => { signOut(auth) }}>Log out</button>
+
         <CustomSelect
           options={containers.map(container => ({ id: container.id.toString(), title: container.title }))}
           value={selectedContainer}
@@ -534,7 +561,7 @@ export default function Home() {
               {/* Drag Overlay For item Item */}
               {activeId && activeId.toString().includes('item') && (
                 <div className='m-4 min-w-[300px]'>
-                <Items id={activeId} title={findItemTitle(activeId)} />
+                  <Items id={activeId} title={findItemTitle(activeId)} />
                 </div>
               )}
               {/* Drag Overlay For Container */}
@@ -542,7 +569,7 @@ export default function Home() {
                 <Container id={activeId} title={findContainerTitle(activeId)}>
                   {findContainerItems(activeId).map((i) => (
                     <div className='m-4 min-w-[300px] ml-0 mr-0 mb-0'>
-                    <Items key={i.id} title={i.title} id={i.id} />
+                      <Items key={i.id} title={i.title} id={i.id} />
                     </div>
                   ))}
                 </Container>
