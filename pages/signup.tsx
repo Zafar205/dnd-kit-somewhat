@@ -1,8 +1,10 @@
 "use client"
 import React, { useState } from 'react';
-import {useCreateUserWithEmailAndPassword} from "react-firebase-hooks/auth"
-import {auth} from "@/firebase/config"
+import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth"
+import { auth } from "@/firebase/config"
 import { useRouter } from 'next/navigation';
+import { getDatabase, ref, set } from "firebase/database";
+import {v4 as userIddb} from "uuid";
 
 const SignUpForm = () => {
   const [formData, setFormData] = useState({
@@ -12,25 +14,27 @@ const SignUpForm = () => {
   });
   const router = useRouter();
 
-interface FormData {
+  interface FormData {
     email: string;
     password: string;
     confirmPassword: string;
-}
+  }
 
-const [CreateUserWithEmailAndPassword] = useCreateUserWithEmailAndPassword(auth)
+  const [CreateUserWithEmailAndPassword] = useCreateUserWithEmailAndPassword(auth)
 
-const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Handle form submission
     console.log('Sign up form submitted:', formData);
     if (!formData.email || !formData.password || formData.password !== formData.confirmPassword) {
       alert("Please make sure all fields are valid.");
       return;
-  }
+    }
 
     try {
       const result = await CreateUserWithEmailAndPassword(formData.email, formData.password);
+      writeUserData(formData.email);
+
       console.log("result", result);
       router.push('/');
       setFormData({
@@ -38,15 +42,27 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         password: '',
         confirmPassword: '',
       })
-  } catch (error) {
+    } catch (error) {
       if (error instanceof Error) {
-          console.error("Error", error.message);
+        console.error("Error", error.message);
       } else {
-          console.error("An unknown error occurred");
+        console.error("An unknown error occurred");
       }
+    }
+
+  };
+
+
+
+  const writeUserData = async (email: string)=> {
+    const db = getDatabase();
+    const userId = userIddb();  // Generate a unique user ID
+    await set(ref(db, 'users/' + userId), {
+      id: email,
+      email: email,
+    });
   }
-  
-};
+
 
   return (
     <section className="bg-gray-50 dark:bg-gray-900">
@@ -72,7 +88,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                   placeholder="name@company.com"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
               <div>
@@ -87,7 +103,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                   className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   required
                   value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 />
               </div>
               <div>
@@ -102,7 +118,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                   className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   required
                   value={formData.confirmPassword}
-                  onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 />
               </div>
 

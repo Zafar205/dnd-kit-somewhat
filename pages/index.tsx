@@ -2,7 +2,8 @@
 import { use, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '@/firebase/config';
+import { auth, db , usersRef } from '@/firebase/config';
+import { ref, query, get, orderByChild, equalTo } from 'firebase/database';
 // DnD
 import {
   DndContext,
@@ -86,6 +87,34 @@ export default function Home() {
     return null;
   }
 
+
+  interface UserData {
+    email: string;
+    [key: string]: any;
+  }
+
+  const getUserByEmail =async (db: any, email: string): Promise<UserData | null> =>{
+    try {
+      const usersRef = ref(db, 'users');
+      const emailQuery = query(usersRef, orderByChild('email'), equalTo(email));
+      const snapshot = await get(emailQuery);
+  
+      if (snapshot.exists()) {
+        const userData: { [key: string]: UserData } = snapshot.val();
+        // Assuming unique emails, return the first user
+        console.log("User data:", Object.values(userData)[0]);
+        return Object.values(userData)[0]; 
+      } 
+      else {
+        return null; // User not found
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      return null;
+    }
+  }
+  
+
   const handleTaskDelete = (containerId: UniqueIdentifier, taskId: UniqueIdentifier) => {
     console.log('containerIdDelete', containerId);
     setContainers(containers.map(container =>
@@ -140,6 +169,9 @@ export default function Home() {
   };
 
   const onAddContainer = () => {
+    if (user?.email) {
+      getUserByEmail(db, user.email);
+    }
     if (!showTitleInput) {
       setShowTitleInput(true);
       return;
@@ -467,7 +499,7 @@ export default function Home() {
       </Modal>
       <div className="flex gap-4 mb-6">
 
-        <button onClick={() => { signOut(auth) }}>Log out</button>
+        <button className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full' onClick={() => { signOut(auth) }}>Log out</button>
 
         <CustomSelect
           options={containers.map(container => ({ id: container.id.toString(), title: container.title }))}
@@ -548,6 +580,7 @@ export default function Home() {
                     >
                       +
                     </button>
+                  <button className= "ml-2"onClick={()=> setShowTitleInput(false)}>✖</button>
                   </div>
                 </div>
               ) : (
