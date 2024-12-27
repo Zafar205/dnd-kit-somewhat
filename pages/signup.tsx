@@ -4,7 +4,16 @@ import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth"
 import { auth } from "@/firebase/config"
 import { useRouter } from 'next/navigation';
 import { getDatabase, ref, set } from "firebase/database";
-import {v4 as userIddb} from "uuid";
+
+type UniqueIdentifier = string | number;
+type DNDType = {
+  id: UniqueIdentifier;
+  title: string;
+  items: {
+    id: UniqueIdentifier;
+    title: string;
+  }[];
+};
 
 const SignUpForm = () => {
   const [formData, setFormData] = useState({
@@ -73,7 +82,7 @@ const SignUpForm = () => {
     await set(ref(db, 'rooms/' + sanitizeEmail(email)), {
       id: email,
       email: email,
-      data : {"data": "data"},
+      data : Array<DNDType>(),
       admin : true,
       members : [email]
     });

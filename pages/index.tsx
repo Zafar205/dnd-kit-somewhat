@@ -2,7 +2,7 @@
 import { use, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db , usersRef } from '@/firebase/config';
+import { auth, db, usersRef } from '@/firebase/config';
 import { ref, query, get, orderByChild, equalTo, set } from 'firebase/database';
 // DnD
 import {
@@ -35,6 +35,7 @@ import { Button } from '@/components/Button';
 import CustomSelect from '@/components/Select';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
+import { title } from 'process';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -58,17 +59,18 @@ export default function Home() {
   const [showTitleInput, setShowTitleInput] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user] = useAuthState(auth);
-  const router = useRouter();  
+  const router = useRouter();
   const [selectedContainer, setSelectedContainer] = useState<string>('');
   const [newTask, setNewTask] = useState<string>('');
 
-    // DND Handlers
-    const sensors = useSensors(
-      useSensor(PointerSensor),
-      useSensor(KeyboardSensor, {
-        coordinateGetter: sortableKeyboardCoordinates,
-      }),
-    );
+  // DND Handlers
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
 
 
   useEffect(() => {
@@ -77,6 +79,28 @@ export default function Home() {
     }
     setIsLoading(false);
   }, [user, router]);
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchContainers = async () => {
+      try {
+        const roomRef = ref(db, `rooms/${sanitizeEmail(user.email!)}`);
+        const snapshot = await get(roomRef);
+
+        if (snapshot.exists()) {
+          const roomData = snapshot.val();
+          setContainers(roomData.data.containers || []);
+        } else {
+          // Initialize room if it doesn't exist
+          await writeRoomData(user.email!, []);
+        }
+      } catch (error) {
+        console.error("Error fetching containers:", error);
+      }
+    };
+
+    fetchContainers();
+  }, [user,[]]);
 
   // Render loading state
   if (isLoading) {
@@ -89,6 +113,7 @@ export default function Home() {
   }
 
 
+
   interface UserData {
     email: string;
     [key: string]: any;
@@ -96,118 +121,102 @@ export default function Home() {
 
   const logout = () => {
     localStorage.setItem('user', "");
-    signOut(auth);}
+    signOut(auth);
+  }
 
 
 
-    const getUserByEmail = async (email: string): Promise<UserData | null> => {
-      try {
-        console.log("Checking email:", email); // Debug log
-        console.log("Sanitized email:", sanitizeEmail(email));
-        const userRef = ref(db, 'users/' + sanitizeEmail(email));
-        const snapshot = await get(userRef);
-        
-        console.log("Snapshot:", snapshot.val()); // Debug log
-        
-        if (snapshot.exists()) {
-          return snapshot.val();
-        }
-        return null;
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        return null;
+
+  const getUserByEmail = async (email: string): Promise<UserData | null> => {
+    try {
+      console.log("Checking email:", email); // Debug log
+      console.log("Sanitized email:", sanitizeEmail(email));
+      const userRef = ref(db, 'users/' + sanitizeEmail(email));
+      const snapshot = await get(userRef);
+
+      console.log("Snapshot:", snapshot.val()); // Debug log
+
+      if (snapshot.exists()) {
+        return snapshot.val();
       }
-    };
-  
+      return null;
+    } catch (error) {
+             console.error("Error fetching user data:", error);
+      return null;
+    }
+  };
+
   const sanitizeEmail = (email: string) => {
     return email.replace(/[.#$/[\]]/g, '_');
   };
-  const writeRoomData = async (email: string, containers: DNDType[]) => {  
+  const writeRoomData = async (email: string, containers: DNDType[]) => {
     try {
       // Create a new unique ID for the room
       await set(ref(db, `rooms/${sanitizeEmail(email)}`), {
-        id: email, 
+        id: email,
         email: email,
         data: {
-          containers: containers 
+          containers: containers
         },
         admin: true,
         members: [email]
       });
-  
+
     } catch (error) {
       console.error("Error writing room data:", error);
     }
   };
 
-  const handleTaskDelete = (containerId: UniqueIdentifier, taskId: UniqueIdentifier) => {
+  const updateContainers = async (newContainers: DNDType[]) => {
+    if (!user) return;
+    await writeRoomData(user.email!, newContainers);
+    setContainers(newContainers);
+  };
+
+
+  const handleTaskDelete = async (containerId: UniqueIdentifier, taskId: UniqueIdentifier) => {
     console.log('containerIdDelete', containerId);
-    setContainers(containers.map(container =>
+    const updatedContainer = containers?.map(container =>
       container.id === containerId
         ? { ...container, items: container.items.filter(item => item.id !== taskId) }
         : container
-    ));
-    if(user?.email){
-    writeRoomData(user.email, containers.map(container =>
-      container.id === containerId
-        ? { ...container, items: container.items.filter(item => item.id !== taskId) }
-        : container
-    ));
-    }
+    )
+    await updateContainers(updatedContainer);
   };
 
-  const handleTaskEdit = (containerId: UniqueIdentifier, taskId: UniqueIdentifier, newTitle: string) => {
+  const handleTaskEdit = async (containerId: UniqueIdentifier, taskId: UniqueIdentifier, newTitle: string) => {
     console.log("containerIdEdit", containerId);
-    setContainers(containers.map(container =>
+    const updateContainer = containers?.map(container =>
       container.id === containerId
         ? {
           ...container,
-          items: container.items.map(item =>
+          items: container.items?.map(item =>
             item.id === taskId ? { ...item, title: newTitle } : item
           )
         }
         : container
-    ));
-    if(user?.email){
-    writeRoomData(user.email, containers.map(container =>
-      container.id === containerId
-        ? {
-          ...container,
-          items: container.items.map(item =>
-            item.id === taskId ? { ...item, title: newTitle } : item
-          )
-        }
-        : container
-    ));
-    }
+    );
+    await updateContainers(updateContainer);
   };
 
-  const handleTitleChange = (containerId: UniqueIdentifier, newTitle: string) => {
-    setContainers(containers.map(container =>
+  const handleTitleChange = async (containerId: UniqueIdentifier, newTitle: string) => {
+    const updateContainer = containers?.map(container =>
       container.id === containerId
         ? { ...container, title: newTitle }
         : container
-    ));
-    if(user?.email){
-    writeRoomData(user.email, containers.map(container =>
-      container.id === containerId
-        ? { ...container, title: newTitle }
-        : container
-    ));
-    }
+    );
+    await updateContainers(updateContainer);
   };
-  const handleDeleteContainer = (containerId: UniqueIdentifier) => {
-    setContainers(containers.filter(container => container.id !== containerId));
-    if (user?.email) {
-      writeRoomData(user.email, containers.filter(container => container.id !== containerId));
-    }
+  const handleDeleteContainer = async (containerId: UniqueIdentifier) => {
+    const updateContainer = containers.filter(container => container.id !== containerId);
+    await updateContainers(updateContainer);
   };
 
   const handleAddTask = async () => {
     if (!selectedContainer || !newTask) return;
 
     const id = `item-${uuidv4()}`;
-    const updatedContainers = containers.map(container => {
+    const updatedContainer = containers?.map(container => {
       if (container.id === selectedContainer) {
         return {
           ...container,
@@ -216,11 +225,7 @@ export default function Home() {
       }
       return container;
     });
-
-    setContainers(updatedContainers);
-    if(user?.email){
-      writeRoomData(user.email,updatedContainers);
-      }
+    await updateContainers(updatedContainer);
     setNewTask('');
     setSelectedContainer('');
   };
@@ -239,25 +244,15 @@ export default function Home() {
     }
 
     const id = `container-${uuidv4()}`;
-    setContainers([
+    const updateContainer = [
       ...containers,
       {
         id,
         title: containerName,
         items: [],
       },
-    ]);
-
-    if(user?.email){
-    writeRoomData(user.email, [
-      ...containers,
-      {
-        id,
-        title: containerName,
-        items: [],
-      },
-    ]);
-    }
+    ];
+    await updateContainers(updateContainer);
 
     setContainerName('');
     setShowAddContainerModal(false);
@@ -270,19 +265,21 @@ export default function Home() {
     }
   };
 
-  const onAddItem = () => {
+  const onAddItem = async () => {
     if (!itemName) return;
     const id = `item-${uuidv4()}`;
     const container = containers.find((item) => item.id === currentContainerId);
     if (!container) return;
-    container.items.push({
+
+    container.items ? container.items?.push({
       id,
       title: itemName,
-    });
-    setContainers([...containers]);
-    if(user?.email){
-      writeRoomData(user.email, [...containers]);
-      }
+    }) : container.items = [{ id, title: itemName }];
+
+    const updateContainer = [...containers];
+    console.log(updateContainer)
+    await updateContainers(updateContainer);
+
     setItemName('');
     setShowAddItemModal(false);
   };
@@ -327,7 +324,7 @@ export default function Home() {
     setActiveId(id);
   }
 
-  const handleDragMove = (event: DragMoveEvent) => {
+  const handleDragMove = async (event: DragMoveEvent) => {
     const { active, over } = event;
 
     // Handle Items Sorting
@@ -368,11 +365,8 @@ export default function Home() {
           activeitemIndex,
           overitemIndex,
         );
+        await updateContainers(newItems);
 
-        setContainers(newItems);
-        if(user?.email){
-          writeRoomData(user.email, newItems);
-          }
       } else {
         // In different containers
         let newItems = [...containers];
@@ -385,9 +379,7 @@ export default function Home() {
           0,
           removeditem,
         );
-        setContainers(newItems);
-        if(user?.email){
-          writeRoomData(user.email, newItems);}
+        await updateContainers(newItems);
       }
     }
 
@@ -426,16 +418,15 @@ export default function Home() {
         1,
       );
       newItems[overContainerIndex].items.push(removeditem);
-      setContainers(newItems);
-      if(user?.email){
-        writeRoomData(user.email, newItems);
-        }
+
+      await updateContainers(newItems);
+
 
     }
   };
 
   // This is the function that handles the sorting of the containers and items when the user is done dragging.
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
     // Handling Container Sorting
@@ -456,10 +447,8 @@ export default function Home() {
       // Swap the active and over container
       let newItems = [...containers];
       newItems = arrayMove(newItems, activeContainerIndex, overContainerIndex);
-      setContainers(newItems);
-      if(user?.email){
-        writeRoomData(user.email, newItems);
-        }
+      await updateContainers(newItems);
+
 
 
 
@@ -502,10 +491,9 @@ export default function Home() {
           activeitemIndex,
           overitemIndex,
         );
-        setContainers(newItems);
-        if(user?.email){
-          writeRoomData(user.email, newItems);
-          }
+
+        await updateContainers(newItems);
+
 
 
 
@@ -522,10 +510,7 @@ export default function Home() {
           0,
           removeditem,
         );
-        setContainers(newItems);
-        if(user?.email){
-          writeRoomData(user.email, newItems);}
-
+        await updateContainers(newItems);
 
       }
     }
@@ -561,10 +546,9 @@ export default function Home() {
         1,
       );
       newItems[overContainerIndex].items.push(removeditem);
-      setContainers(newItems);
-      if(user?.email){
-        writeRoomData(user.email, newItems);
-        }
+
+      await updateContainers(newItems);
+
 
 
     }
@@ -609,7 +593,7 @@ export default function Home() {
         <button className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full' onClick={logout}>Log out</button>
 
         <CustomSelect
-          options={containers.map(container => ({ id: container.id.toString(), title: container.title }))}
+          options={containers?.map(container => ({ id: container.id.toString(), title: container.title }))}
           value={selectedContainer}
           onChange={(value) => setSelectedContainer(value)}
         />
@@ -639,8 +623,8 @@ export default function Home() {
             onDragEnd={handleDragEnd}
           >
             <div className="flex flex-wrap items-start gap-6">
-              <SortableContext items={containers.map((i) => i.id)}>
-                {containers.map((container) => (
+              <SortableContext items={containers ? containers?.map((i) => i.id) : []}>
+                {containers?.map((container) => (
                   <Container
                     id={container.id}
                     title={container.title}
@@ -652,9 +636,9 @@ export default function Home() {
                     onDelete={() => handleDeleteContainer(container.id)}
                     onTitleChange={(newTitle) => handleTitleChange(container.id, newTitle)}
                   >
-                    <SortableContext items={container.items.map((i) => i.id)}>
+                    <SortableContext items={container.items ? container.items?.map((i) => i.id) : []}>
                       <div className="flex items-start flex-col gap-y-4">
-                        {container.items.map((i) => (
+                        {container.items?.map((i) => (
                           <Items
                             key={i.id}
                             id={i.id}
@@ -687,7 +671,7 @@ export default function Home() {
                     >
                       +
                     </button>
-                  <button className= "ml-2"onClick={()=> setShowTitleInput(false)}>✖</button>
+                    <button className="ml-2" onClick={() => setShowTitleInput(false)}>✖</button>
                   </div>
                 </div>
               ) : (
@@ -707,7 +691,7 @@ export default function Home() {
               {/* Drag Overlay For Container */}
               {activeId && activeId.toString().includes('container') && (
                 <Container id={activeId} title={findContainerTitle(activeId)}>
-                  {findContainerItems(activeId).map((i) => (
+                  {findContainerItems(activeId)?.map((i) => (
                     <div className='m-4 min-w-[300px] ml-0 mr-0 mb-0'>
                       <Items key={i.id} title={i.title} id={i.id} />
                     </div>
